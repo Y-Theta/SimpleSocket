@@ -6,7 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace SocketCore.Core {
-    public interface ISocketMsgContract :IDisposable {
+    public interface ISocketMessageContract :IDisposable {
         
         #region Properties
         /// <summary>
@@ -27,7 +27,7 @@ namespace SocketCore.Core {
         /// <summary>
         /// 
         /// </summary>
-        event RecDataResHandle OnMessageReceived;
+        event PackageResolveHandle OnMessageReceive;
         #endregion
 
         #region Methods
@@ -38,12 +38,19 @@ namespace SocketCore.Core {
         /// 初始化客户端
         /// </summary>
         void Init();
-        
+
         #endregion
 
         #region MSG
 
-  
+        /// <summary>
+        /// 发送信息
+        /// </summary>
+        /// <param name="data">待发送的数据</param>
+        void Send(Package data);
+
+        void SendAsync(Package data, Action ondatasended);
+
         #endregion
 
         #endregion

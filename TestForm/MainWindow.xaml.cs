@@ -1,7 +1,9 @@
 ﻿using SocketCore.Core;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
+using Newtonsoft.Json;
 
 namespace TestForm {
     /// <summary>
@@ -24,13 +27,17 @@ namespace TestForm {
             this.Loaded += MainWindow_Loaded;
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e) {
-            MsgHead h = new MsgHead();
-            h.PACKID = 12;
-            h.PACKSIZE = 4096;
-            Console.WriteLine(h.Serialize());
-            Console.WriteLine(h.ToByteArray());
-            RecieiveAsync(result);
+        private unsafe void MainWindow_Loaded(object sender, RoutedEventArgs e) {
+            byte[] o = Encoding.Default.GetBytes("12345678910");
+            Package p = (Package)o.Package();
+
+            Console.WriteLine(p.Info());
+            byte[] s = p.Serialize();
+            Console.WriteLine(JsonConvert.SerializeObject(p));
+            Package b = (Package)s.UnPackage();
+            Console.WriteLine(JsonConvert.SerializeObject(b));
+            Console.WriteLine(b.Info());
+            //RecieiveAsync(result);
         }
 
         private void result(IAsyncResult ar) {

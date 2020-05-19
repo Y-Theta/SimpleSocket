@@ -9,11 +9,13 @@ using System.Threading.Tasks;
 
 
 namespace SocketCore.Core {
-    public interface IPackageMessage {
-        #region Properties
-        Int32 PACKID { get; set; }
 
-        UInt32 PACKSIZE { get; set; }
-        #endregion
-    }
+    /// <summary>
+    /// 比特流数据解析委托
+    /// </summary>
+    /// <param name="data"></param>
+
+    public delegate void PackageResolveHandle(Package package);
+
+
 }

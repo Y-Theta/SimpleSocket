@@ -16,13 +16,6 @@ namespace SocketCore.Core {
         /// </summary>
         /// <param name="data">待发送的数据</param>
         void Send(byte[] data);
-        void SendAsync(byte[] data, ByteDataSendHandle ondatasended);
-
-        /// <summary>
-        /// 接收信息
-        /// </summary>
-        /// <returns></returns>
-        byte[] Recieive();
-        void RecieiveAsync(RecDataResHandle ondatareceived);
+        void SendAsync(byte[] data, Action ondatasended);
     }
 }
