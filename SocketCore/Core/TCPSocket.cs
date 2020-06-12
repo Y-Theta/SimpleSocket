@@ -4,18 +4,23 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
 
 namespace SocketCore.Core {
+    public abstract class TCPSocket :ITcpSocket {
+        #region Properties
 
-    /// <summary>
-    /// 比特流数据解析委托
-    /// </summary>
-    /// <param name="data"></param>
+        //public abstract IPEndPoint Endpoint { get; set; }
+        #endregion
 
-    public delegate void PackageResolveHandle(Package package);
+        #region Methods
+        #endregion
 
-
+        #region Constructors
+        #endregion
+    }
 }

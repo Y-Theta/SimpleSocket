@@ -9,7 +9,13 @@ namespace SocketCore.Core {
     /// <summary>
     /// 
     /// </summary>
-    interface ISocketClient {
+    public interface ISocketClient {
+
+        /// <summary>
+        /// 尝试连接客户端
+        /// </summary>
+        /// <param name="timeout"></param>
+        void BeginConnent(int timeout);
 
         /// <summary>
         /// 发送信息
