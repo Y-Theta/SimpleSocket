@@ -62,6 +62,10 @@ namespace SocketCore.DataModel {
         #endregion
 
         #region Methods
+        public void Dispose() {
+            PACKSIZE = 0;
+            DATA = null;
+        }
         #endregion
 
         #region Constructors

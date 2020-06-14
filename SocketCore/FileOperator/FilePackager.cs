@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.MemoryMappedFiles;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -51,17 +52,13 @@ namespace SocketCore.FileOperator {
         /// <summary>
         /// 静态的打包序列字典
         /// </summary>
-        private static List<PackageQueue> _Queues;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private MemoryMappedFile _filecache;
+        private static List<FileQueue> _Queues;
 
         /// <summary>
         /// 
         /// </summary>
         private bool disposedValue;
+
         #endregion
 
         #region Methods
@@ -71,7 +68,7 @@ namespace SocketCore.FileOperator {
         /// 分包文件
         /// </summary>
         /// <param name="filename"></param>
-        private static FilePackageInfo package(string filename, int packagesize, int workingthreads, ref MemoryMappedFile insstancecache) {
+        private static void package(string filename, int workingthreads, ref FileQueue queue,ref FilePackageInfo fpinfo, EventHandler<FileQueueArgs> ready, EventHandler<FileQueueArgs> completed) {
             if (!File.Exists(filename)) {
                 throw new ArgumentException("File Not Exist !");
             }
@@ -79,50 +76,63 @@ namespace SocketCore.FileOperator {
             FileInfo info = new FileInfo(filename);
             FilePackageInfo fp = new FilePackageInfo {
                 FileName = info.Name,
-                FileSize = info.Length
+                FileSize = info.Length,
+                ThreadsCounts = workingthreads
             };
-
-            if (packagesize <= 6000)
-                throw new ArgumentException("Package length too short");
+            fpinfo = fp;
 
             // packagesize = all data packages
-            fp.FilePackages = Math.Round(fp.FileSize / packagesize, MidpointRounding.AwayFromZero);
+            FileQueue fq =  new FileQueue(fp, filename);
+            queue = fq;
+            fq.Ready += ready;
+            fq.Progress += completed;
+            fq.Pack();
 
-            MemoryMappedFile file = MemoryMappedFile.CreateFromFile(filename, FileMode.Open, fp.FileName + "cached", 0, MemoryMappedFileAccess.ReadExecute);
-            insstancecache = file;
-
-            while (fp.FilePackages / workingthreads > int.MaxValue)
-                workingthreads += 2;
-
-            fp.ThreadsCounts = workingthreads;
-
-            int queuelength = (int)Math.Round(fp.FilePackages / workingthreads, MidpointRounding.AwayFromZero);
-
-            for (int i = 0; i < workingthreads; i++) {
-                PackageQueue queue = new PackageQueue(ref file);
-                if (i == workingthreads - 1) {
-                    queue.Length = (int)(fp.FilePackages - i * queuelength);
-                } else {
-                    queue.Length = queuelength;
-                }
-                queue.Offset = i * queue.Length * packagesize;
-                queue.PackageSize = packagesize;
-
-                _Queues.Add(queue);
-            }
-
-            return fp;
         }
+
+
+        private static void unpackage(string filename, int workingthreads, ref FileQueue queue, ref FilePackageInfo fpinfo, EventHandler<FileQueueArgs> ready, EventHandler<FileQueueArgs> completed) {
+
+        }
+
 
         /// <summary>
         /// 将文件分包
         /// </summary>
-        /// <param name="filename">文件绝对名称</param>
-        /// <param name="packagesize">所要分成的每个包的大小(/byte)</param>
-        public FilePackageInfo Package(string filename, int packagesize) {
-            return package(filename, packagesize, WorkingThreads, ref _filecache);
+        /// <param name="filename">要分包的文件名称</param>
+        /// <param name="workingthreads">使用的线程数,产生同数量的包队列</param>
+        /// <param name="queue">文件包队列实例</param>
+        /// <param name="OnReady"><打包准备完成时触发/param>
+        /// <param name="OnProgress">打包过程中触发</param>
+        /// <returns></returns>
+        public void Package(
+            string filename, 
+            int workingthreads, 
+            ref FileQueue queue, 
+            ref FilePackageInfo fpinfo,
+            EventHandler<FileQueueArgs> OnReady, 
+            EventHandler<FileQueueArgs> OnProgress) {
+
+            package(filename, workingthreads, ref queue,ref fpinfo, OnReady, OnProgress);
         }
 
+        /// <summary>
+        /// 组装文件包
+        /// </summary>
+        /// <param name="info"></param>
+        public void UnPackage(string filename, FilePackageInfo info, Action<double> Prograss) {
+
+        }
+
+
+        /// <summary>
+        /// 获得所有的包队列
+        /// </summary>
+        /// <returns></returns>
+        public Dictionary<string, FileQueue> GetQueues() {
+            return null;
+
+        }
 
         //public async Task PackageAsync(string filename, int packagesize, Action<FilePackageInfo> callback = null) {
         //    await Task.Run(() => {
@@ -139,8 +149,6 @@ namespace SocketCore.FileOperator {
             if (!disposedValue) {
                 if (disposing) {
                     // TODO: 释放托管状态(托管对象)
-                    _filecache.Dispose();
-
                 }
 
                 // TODO: 释放未托管的资源(未托管的对象)并替代终结器
@@ -159,7 +167,7 @@ namespace SocketCore.FileOperator {
 
         #region Constructors
         static FilePackager() {
-            _Queues = new List<PackageQueue>();
+            _Queues = new List<FileQueue>();
         }
 
         #endregion

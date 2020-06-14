@@ -95,7 +95,7 @@ namespace SocketCore.Extension {
                 head.CID.ToString().PadRight(20),
                 head.PACKID.ToString().PadRight(20),
                 head.PACKSIZE.ToString().PadRight(20),
-                head.TimeStamp.ToDateTime().ToLongTimeString());
+                head.TimeStamp.ToString());
         }
 
         /// <summary>

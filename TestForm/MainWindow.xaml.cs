@@ -26,6 +26,8 @@ using SocketCore.Extension;
 using System.Net;
 using SocketCore.DataModel;
 using Microsoft.Win32;
+using SocketCore.FileOperator;
+using System.Collections;
 
 namespace TestForm {
     /// <summary>
@@ -44,8 +46,7 @@ namespace TestForm {
         };
         public static string[] TestLabel { get => testlabel; set => testlabel = value; }
 
-        public Dictionary<string, TestStatic> Test;
-
+        FilePackager fp;
         int i = 0;
 
         public event EventHandler CanExecuteChanged;
@@ -57,12 +58,14 @@ namespace TestForm {
             this.Loaded += MainWindow_Loaded;
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e) {
+        private unsafe void MainWindow_Loaded(object sender, RoutedEventArgs e) {
             //byte[] o = Encoding.Default.GetBytes("12345678910");
             //Package p = (Package)o.Package();
             //data = new int[20];
             //Console.WriteLine(Thread.CurrentThread.ManagedThreadId);
-            Console.WriteLine(Marshal.SizeOf(typeof(FilePackageInfo)));
+
+            Console.WriteLine(UInt32.MaxValue);
+            Console.WriteLine(Int32.MaxValue);
             //RecieiveAsync(result);
             //for (int i = 10; i > 0; i--) {
             //    var s = i.ToString();
@@ -115,57 +118,14 @@ namespace TestForm {
             Console.WriteLine(parameter);
             switch (parameter) {
                 case "Test":
-                    //Console.WriteLine("Test");
-                    //FileStream fs = new FileStream(file, FileMode.CreateNew);
-                    //fs.Seek(32L * 1024 * 1024 - 1, SeekOrigin.Begin);
-                    //fs.WriteByte(0b11110000);
-                    //fs.Close()
-                    //ser = new SocketServerBase();
-                    //ser.Address = new System.Net.IPAddress(new byte[] { 127, 0, 0, 1 });
-                    //ser.ActiveTestInterval = 10000;
-                    //ser.Port = 24680;
-                    //ser.Init();
-                    //ser.OnClientAccepted += Ser_OnClientAccepted;
-                    //ser.OnMessageReceive += Ser_OnMessageReceive;
-                    //ser.BeginAccept();
-                    //using (MemoryMappedFile mf = MemoryMappedFile.CreateFromFile(file, FileMode.Open, "testmap", 0)) {
-                    //    using (MemoryMappedViewAccessor ma = mf.CreateViewAccessor(1024L * (32L * 1024 - 1), 1024L)) {
-                    //        byte b = ma.ReadByte(1023);
-                    //        Console.WriteLine(b);
-                    //    }
-                    //};
-
-                    //FileDialog dia = new OpenFileDialog();
-                    //dia.FileOk += Dia_FileOk;
-                    //dia.Filter = "*.txt,*.dat|*.dat;*.txt|所有文件(*.*)|*.*";
-                    //dia.ShowDialog();
-                    //Test = new Dictionary<string, TestStatic>();
-                    //for (int i = 0; i < 3; i++) {
-                    //    var temp = i.ToString();
-
-                    //    Task.Run(() => {
-                    //        lock (Test) {
-
-                    //            Console.WriteLine(temp);
-                    //            Console.WriteLine(TestStatic.Data);
-                    //            Console.WriteLine(TestStatic.TData);
-                    //            Console.WriteLine(TestStatic.List == null ? "null" : TestStatic.List[0]);
-                    //            Console.WriteLine(TestStatic.TList == null ? "null" : TestStatic.TList[0]);
-                    //            TestStatic test = new TestStatic { Name = "Test - " + temp };
-                    //            TestStatic.Data = int.Parse(temp);
-                    //            TestStatic.TData = int.Parse(temp);
-                    //            TestStatic.List = new List<string> { temp };
-                    //            TestStatic.TList = new List<string> { temp };
-                    //            Console.WriteLine();
-                    //            Console.WriteLine();
-
-                    //            Test.Add(test.Name, test);
-                    //        }
-                    //    });
-                    //}
 
 
-
+                    FileDialog fd = new OpenFileDialog();
+                    fd.AddExtension = true;
+                    fd.CheckFileExists = true;
+                    fd.FileOk += Dia_FileOk;
+                    fd.Filter = "dat files|*.dat|All files (*.*)|*.*";
+                    fd.ShowDialog();
                     break;
                 case "MuiltThreadAccess":
 
@@ -186,13 +146,76 @@ namespace TestForm {
         }
 
         private void Dia_FileOk(object sender, System.ComponentModel.CancelEventArgs e) {
-            FileDialog fd = ((FileDialog)sender);
-            FileInfo fi = new FileInfo(fd.FileName);
-            Console.WriteLine(fi.Length / 1024 / 1024);
-            Console.WriteLine(fi.Name);
-            Console.WriteLine(fi.DirectoryName);
-            Console.WriteLine(fi.Attributes);
+
+
+            OpenFileDialog fd = ((OpenFileDialog)sender);
+            MemoryMappedFile file = MemoryMappedFile.CreateFromFile(fd.FileName, FileMode.Open, fd.SafeFileName + "cached",0, MemoryMappedFileAccess.ReadWrite);
+
+            MemoryMappedViewAccessor acc = file.CreateViewAccessor(0, (long)1 << 31 - 1);
+
+
+            //List<Task> ts = new List<Task>();
+            //for (int i = 0; i < 5; i++) {
+            //    int index = i;
+            //    Task t = new Task(() => {
+            //        var accessor = file.CreateViewAccessor(index * 128, 128, MemoryMappedFileAccess.Write);
+            //        char[] buffer = "Hellow World".ToArray();
+            //        accessor.WriteArray(0, buffer, 0, buffer.Length);
+            //        accessor.Flush();
+            //        accessor.Dispose();
+            //    });
+            //    ts.Add(t);
+            //}
+            //ts.ForEach(t => t.Start());
+            //Task.WaitAll(ts.ToArray());
+            //file.Dispose();
+
+            //fp = new FilePackager();
+            //FileQueue queue = null;
+            //FilePackageInfo info = new FilePackageInfo();
+            //Thread.Sleep(500);
+            //fp.Package(fd.FileName, 4, ref queue, ref info, OnReady, OnProgress);
+            //Thread.Sleep(500);
+
+            //Console.WriteLine(JsonConvert.SerializeObject(info));
         }
+
+        private void OnProgress(object sender, FileQueueArgs e) {
+            FileQueue q = sender as FileQueue;
+
+            lock (q.PackageQueues) {
+                Console.WriteLine("-------------------------------------");
+                Console.WriteLine("Progressing : " + e.QueueID);
+                Console.WriteLine(JsonConvert.SerializeObject(e.Origin));
+                Console.WriteLine(JsonConvert.SerializeObject(e.Now));
+                Console.WriteLine("-------------------------------------");
+            }
+        }
+
+        private void OnReady(object sender, FileQueueArgs e) {
+            FileQueue q = sender as FileQueue;
+
+            lock (q.PackageQueues) {
+                Console.WriteLine("-------------------------------------");
+                Console.WriteLine("Ready : " + e.QueueID);
+                Console.WriteLine(JsonConvert.SerializeObject(e.Origin));
+                Console.WriteLine(JsonConvert.SerializeObject(e.Now));
+                Console.WriteLine("-------------------------------------");
+
+                //if (e.QueueID == 1) {
+                //    Task.Run(() => {
+                //        for (int i = 0; i < 512; i++) {
+                //            UserPackage p = null;
+                //            while (!q.Get(1, out p)) {
+                //                Thread.Sleep(5);
+                //            }
+                //            Console.WriteLine(p?.Info());
+                //        }
+                //    });
+                //}
+            }
+        }
+
 
         //private void Cli_OnMessageReceive(Package package) {
         //    Debug.WriteLine(package.DATA.Length);
@@ -218,25 +241,5 @@ namespace TestForm {
 
 
         #endregion
-    }
-
-
-    public class TestStatic {
-
-        public string Name;
-
-
-        public static int Data;
-
-        [ThreadStatic]
-        public static int TData;
-
-        public static List<string> List;
-
-        [ThreadStatic]
-        public static List<string> TList;
-
-
-
     }
 }
